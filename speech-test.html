@@ -51,6 +51,9 @@
       <button class="go" data-test="beep">4 · Play a beep (like the music)</button>
       <button class="go" data-test="both">5 · Beep, then say "hello"</button>
       <button class="go" data-test="later">6 · Say "hello" 2 seconds after the tap (like the game)</button>
+      <button class="go" data-test="cancel1">7 · Stop, then say "hello" straight away (the old game way)</button>
+      <button class="go" data-test="music">8 · Say "hello" while music is playing</button>
+      <button class="go" data-test="gamecode">9 · Say "Find big B" with the game's own speech code</button>
       <button data-test="resume">Resume speech</button>
       <button data-test="cancel">Stop speech</button>
       <button data-test="clear">Clear log</button>
@@ -131,6 +134,25 @@ function say(text, { voice = null, lang = null, name = 'speech' } = {}) {
   setTimeout(() => { if (!started) log(`${name}: after 3 s still not started — speaking=${synth.speaking} pending=${synth.pending} paused=${synth.paused}`, 'bad'); }, 3000);
 }
 
+let music = null;
+function startMusic() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!ctx) ctx = new AC();
+    if (ctx.state === 'suspended') ctx.resume();
+    const g = ctx.createGain(); g.gain.value = 0.06; g.connect(ctx.destination);
+    const notes = [523, 659, 784, 659];
+    let i = 0;
+    const tick = () => {
+      const o = ctx.createOscillator(); o.frequency.value = notes[i++ % notes.length];
+      o.connect(g); o.start(); o.stop(ctx.currentTime + 0.22);
+    };
+    tick(); music = setInterval(tick, 250);
+    log('music: playing', 'ok');
+  } catch (e) { log(`music: failed ${e.message}`, 'bad'); }
+}
+function stopMusic() { clearInterval(music); music = null; log('music: stopped'); }
+
 function beep() {
   try {
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -151,6 +173,25 @@ const tests = {
   beep: () => beep(),
   both: () => { beep(); setTimeout(() => say('Hello! This is test five.', { name: 'test 5' }), 500); },
   later: () => { log('test 6: waiting 2 s…'); setTimeout(() => say('Hello! This is test six.', { voice: pickVoice(voices()), name: 'test 6' }), 2000); },
+  cancel1: () => { synth.cancel(); say('Hello! This is test seven.', { voice: pickVoice(voices()), name: 'test 7' }); },
+  music: () => {
+    startMusic();
+    setTimeout(() => say('Hello! This is test eight, with music.', { voice: pickVoice(voices()), name: 'test 8' }), 1000);
+    setTimeout(stopMusic, 6000);
+  },
+  gamecode: async () => {
+    const sp = await import('./src/speech.js');
+    sp.unlockSpeech();
+    log(`test 9: game speech code, voice ${sp.currentVoiceName()}`);
+    const orig = synth.speak.bind(synth);
+    synth.speak = (u) => {
+      u.addEventListener('start', () => log(`test 9: START "${u.text}"`, 'ok'));
+      u.addEventListener('error', (e) => log(`test 9: ERROR "${e.error}" on "${u.text}"`, 'bad'));
+      orig(u);
+    };
+    setTimeout(() => sp.speak('Find big {B}!', { mood: 'question' }), 800);
+    setTimeout(() => { synth.speak = orig; log(`test 9: finished — voice now ${sp.currentVoiceName()}`); }, 6000);
+  },
   resume: () => { synth.resume(); log(`resume — speaking=${synth.speaking} paused=${synth.paused}`); },
   cancel: () => { synth.cancel(); log('stopped'); },
   clear: () => { logEl.textContent = ''; },
