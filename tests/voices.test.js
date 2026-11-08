@@ -60,3 +60,10 @@ test('speechParts: marked letters become one-letter pieces, so voices say the le
 test('speakable drops letter markers for anything spoken in one piece', () => {
   assert.equal(speakable('You know {A}!'), 'You know A!');
 });
+
+test('Siri voices are never picked: iPad lists them but web pages get silence', () => {
+  const voices = [V('Siri Voice 2', 'en-GB'), V('Samantha'), V('Nicky', 'en-US', true, { voiceURI: 'com.apple.speech.synthesis.voice.siri.nicky' })];
+  assert.equal(pickVoice(voices).name, 'Samantha');
+  assert.equal(scoreVoice(V('Siri Female (Enhanced)')), -Infinity);
+  assert.equal(pickVoice([V('Siri Voice 1')]), null, 'no usable voice → browser default');
+});
