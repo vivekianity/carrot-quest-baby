@@ -49,10 +49,10 @@ test('text is tidied so it reads like a person talks', () => {
 });
 
 test('speechParts: marked letters become one-letter pieces, so voices say the letter name', () => {
-  assert.deepEqual(speechParts('Find big {A}!'), ['Find big', 'A']);
-  assert.deepEqual(speechParts('This is big {B}. Find little {B}!'), ['This is big', 'B', 'Find little', 'B']);
-  assert.deepEqual(speechParts('{I}'), ['I']);
-  assert.deepEqual(speechParts("It's big {A}! Tap it!"), ["It's big", 'A', 'Tap it!']);
+  assert.deepEqual(speechParts('Find big {A}!'), ['Find big', 'a'], 'a lone capital would be read "capital A"');
+  assert.deepEqual(speechParts('This is big {B}. Find little {B}!'), ['This is big', 'b', 'Find little', 'b']);
+  assert.deepEqual(speechParts('{I}'), ['i']);
+  assert.deepEqual(speechParts("It's big {A}! Tap it!"), ["It's big", 'a', 'Tap it!']);
   assert.deepEqual(speechParts('How many carrots?'), ['How many carrots?']);
   assert.deepEqual(speechParts('Find the number seven!'), ['Find the number seven!']);
 });

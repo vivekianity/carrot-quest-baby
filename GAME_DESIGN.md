@@ -13,7 +13,8 @@ no fail states, carrots, Burrow, sticker book, Easy/Classic controls with Classi
   Look-alikes (b/d, p/q, 6/9, M/W …) are never offered together until the item is mastered.
 - **Help:** 1st miss → the answer appears on the sign to match (or the carrots are counted together, one by one);
   2nd miss → the right bubble glows: "It's B! Tap it!". With speech off, the letter/number shows from the start.
-- **Letters are spoken on their own** ("Find big…" / "A") so voices say the letter's name, never "uh" or "aye".
+- **Letters are spoken on their own, in lower case** ("Find big…" / "a") so voices say just the letter's name —
+  never "uh", "aye" or "capital A". "Big" / "little" in the sentence says which kind is meant.
   Little a and g are shown in their school shapes (ɑ, ɡ). Gates show "?" so they never give the answer away.
 - **Levels** (`src/engine/levels-config.js`): 1-1 big A–E, numbers 1–3, counting 1–3 → … → 5-2 everything
   (A–Z, a–z, matching, 1–20, counting 1–10). Endless Meadow mixes everything.

@@ -48,7 +48,8 @@ export const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 /**
  * A letter inside a spoken sentence, marked as {A}. Voices read a letter inside a sentence as a word
  * ("big A" → "big uh", spellings like "ay" → "aye"), so speak() says each marked letter as its own
- * one-letter utterance — and a lone capital letter is always read as its name.
+ * one-letter utterance, in lower case (a lone capital is read as "capital A"). The words "big" and
+ * "little" around it say which kind of letter is meant.
  */
 export const letterName = (ch) => `{${String(ch).toUpperCase()}}`;
 

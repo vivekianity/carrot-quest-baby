@@ -61,10 +61,11 @@ export function voiceStyle(mood = 'calm', voice = null) {
 
 /**
  * Split a line at its {A}-marked letters so each letter is spoken on its own:
- * 'Find big {A}!' → ['Find big', 'A', '!'] (punctuation-only pieces are dropped by speak()).
+ * 'Find big {A}!' → ['Find big', 'a']. The letter is sent as a lone *small* letter: a lone capital is read
+ * as "capital A" on iPad, which doubles up with our own "big"; a lone small letter is read as just its name.
  */
 export function speechParts(text) {
-  return String(text).split(/\{([A-Za-z])\}/).map((p, i) => (i % 2 ? p.toUpperCase() : p.replace(/^[\s!?.,;:]+/, '').trim())).filter((p) => p && /[A-Za-z0-9]/.test(p));
+  return String(text).split(/\{([A-Za-z])\}/).map((p, i) => (i % 2 ? p.toLowerCase() : p.replace(/^[\s!?.,;:]+/, '').trim())).filter((p) => p && /[A-Za-z0-9]/.test(p));
 }
 
 /** Make text read naturally: maths symbols become words, emoji and decorations are dropped. */
