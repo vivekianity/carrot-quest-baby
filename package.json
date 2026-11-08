@@ -1,0 +1,17 @@
+{
+  "name": "carrot-quest-baby",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Carrot Quest Baby - letters and numbers platformer for 3-year-olds on iPad",
+  "type": "module",
+  "scripts": {
+    "start": "serve -l 8765 .",
+    "test": "node --test",
+    "copy-phaser": "node -e \"require('fs').mkdirSync('lib',{recursive:true});require('fs').copyFileSync('node_modules/phaser/dist/phaser.min.js','lib/phaser.min.js')\""
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "phaser": "^3.90.0",
+    "serve": "^14.2.7"
+  }
+}
