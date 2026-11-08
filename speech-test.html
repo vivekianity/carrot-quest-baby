@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Speech Test</title>
+<style>
+  :root { --bg: #fff8ec; --ink: #4a3127; --card: #ffffff; --line: #ead9c0; --go: #5cbf3e; --go-ink: #ffffff; --warn: #c25b2a; --ok: #2f7a24; --muted: #8a7461; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #221a15; --ink: #f5e9dc; --card: #2e241d; --line: #4a3a2e; --go: #4aa83a; --go-ink: #ffffff; --warn: #ff9a6b; --ok: #8fd36a; --muted: #b8a593; }
+  }
+  :root[data-theme="dark"] { --bg: #221a15; --ink: #f5e9dc; --card: #2e241d; --line: #4a3a2e; --go: #4aa83a; --go-ink: #ffffff; --warn: #ff9a6b; --ok: #8fd36a; --muted: #b8a593; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.45 ui-rounded, -apple-system, system-ui, sans-serif;
+         padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 32px max(16px, env(safe-area-inset-left)); }
+  main { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 4px 0 2px; }
+  p.lead { margin: 0 0 16px; color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 18px; margin: 0 0 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+  button { font: inherit; font-weight: 700; min-height: 56px; padding: 10px 14px; border-radius: 14px; border: 2px solid var(--line);
+           background: var(--bg); color: var(--ink); text-align: left; cursor: pointer; }
+  button.go { background: var(--go); color: var(--go-ink); border-color: transparent; }
+  button:active { transform: scale(0.98); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; font-size: 15px; }
+  dt { color: var(--muted); } dd { margin: 0; word-break: break-word; }
+  #log { font: 14px/1.5 ui-monospace, Menlo, monospace; white-space: pre-wrap; max-height: 46vh; overflow: auto; margin: 0; }
+  .ok { color: var(--ok); font-weight: 700; } .bad { color: var(--warn); font-weight: 700; }
+  .voices { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+  .voices button { min-height: 52px; font-weight: 600; font-size: 15px; }
+  small { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>🔊 Speech Test</h1>
+  <p class="lead">For grown-ups. Turn the volume up, tap each green button in order, then take a screenshot of the whole page (including the log).</p>
+
+  <div class="card">
+    <h2>This iPad</h2>
+    <dl id="info"></dl>
+  </div>
+
+  <div class="card">
+    <h2>Tests</h2>
+    <div class="grid">
+      <button class="go" data-test="plain">1 · Say "hello" (no voice chosen)</button>
+      <button class="go" data-test="gb">2 · Say "hello" (British English)</button>
+      <button class="go" data-test="game">3 · Say "hello" with the game's voice</button>
+      <button class="go" data-test="beep">4 · Play a beep (like the music)</button>
+      <button class="go" data-test="both">5 · Beep, then say "hello"</button>
+      <button class="go" data-test="later">6 · Say "hello" 2 seconds after the tap (like the game)</button>
+      <button data-test="resume">Resume speech</button>
+      <button data-test="cancel">Stop speech</button>
+      <button data-test="clear">Clear log</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>What happened</h2>
+    <pre id="log"></pre>
+  </div>
+
+  <div class="card">
+    <h2>English voices on this iPad <small>(tap one to try it)</small></h2>
+    <div class="voices" id="voices"></div>
+  </div>
+</main>
+
+<script type="module">
+import { pickVoice } from './src/engine/voices.js';
+
+const synth = window.speechSynthesis;
+const logEl = document.getElementById('log');
+const t0 = performance.now();
+const live = new Set();
+let ctx = null;
+
+function log(msg, cls = '') {
+  const line = document.createElement('span');
+  if (cls) line.className = cls;
+  line.textContent = `${((performance.now() - t0) / 1000).toFixed(1).padStart(6)}s  ${msg}\n`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+const voices = () => (synth ? synth.getVoices() : []);
+const english = () => voices().filter((v) => /^en/i.test(v.lang));
+const label = (v) => (v ? `${v.name} [${v.lang}${v.localService ? ', on-device' : ', online'}${v.default ? ', default' : ''}]` : '(none)');
+
+function showInfo() {
+  const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  const game = synth ? pickVoice(voices()) : null;
+  const rows = [
+    ['Opened from', standalone ? 'Home Screen app' : 'Safari tab'],
+    ['speechSynthesis', synth ? 'available' : 'MISSING'],
+    ['Voices (all / English)', `${voices().length} / ${english().length}`],
+    ["Game's voice", label(game)],
+    ['Audio session', navigator.audioSession ? navigator.audioSession.type : '(not supported)'],
+    ['Browser', navigator.userAgent],
+  ];
+  document.getElementById('info').innerHTML = '';
+  for (const [k, v] of rows) {
+    const dt = document.createElement('dt'); dt.textContent = k;
+    const dd = document.createElement('dd'); dd.textContent = v;
+    document.getElementById('info').append(dt, dd);
+  }
+  const box = document.getElementById('voices');
+  box.innerHTML = '';
+  for (const v of english()) {
+    const b = document.createElement('button');
+    b.textContent = label(v);
+    b.onclick = () => say(`Hello! I am ${v.name.split(' (')[0]}.`, { voice: v, name: `voice ${v.name}` });
+    box.appendChild(b);
+  }
+}
+
+function say(text, { voice = null, lang = null, name = 'speech' } = {}) {
+  if (!synth) { log('speechSynthesis is missing in this browser', 'bad'); return; }
+  const u = new SpeechSynthesisUtterance(text);
+  if (voice) { u.voice = voice; u.lang = voice.lang; } else if (lang) u.lang = lang;
+  live.add(u);
+  let started = false;
+  log(`${name}: asked to say "${text}" with ${voice ? label(voice) : lang ? `lang ${lang}` : 'no voice set'}`);
+  u.onstart = () => { started = true; log(`${name}: START (should be audible now)`, 'ok'); };
+  u.onend = () => { live.delete(u); log(`${name}: end${started ? '' : ' — but it never started'}`, started ? '' : 'bad'); };
+  u.onerror = (e) => { live.delete(u); log(`${name}: ERROR "${e.error}"`, 'bad'); };
+  synth.speak(u);
+  log(`${name}: queued — speaking=${synth.speaking} pending=${synth.pending} paused=${synth.paused}`);
+  setTimeout(() => { if (!started) log(`${name}: after 3 s still not started — speaking=${synth.speaking} pending=${synth.pending} paused=${synth.paused}`, 'bad'); }, 3000);
+}
+
+function beep() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!ctx) ctx = new AC();
+    if (ctx.state === 'suspended') ctx.resume();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value = 660; g.gain.value = 0.15;
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.4);
+    log(`beep: played (audio state ${ctx.state})`, 'ok');
+  } catch (e) { log(`beep: failed ${e.message}`, 'bad'); }
+}
+
+const tests = {
+  plain: () => say('Hello! This is test one.', { name: 'test 1' }),
+  gb: () => say('Hello! This is test two.', { lang: 'en-GB', name: 'test 2' }),
+  game: () => { const v = pickVoice(voices()); say('Hello! This is test three.', { voice: v, name: 'test 3' }); },
+  beep: () => beep(),
+  both: () => { beep(); setTimeout(() => say('Hello! This is test five.', { name: 'test 5' }), 500); },
+  later: () => { log('test 6: waiting 2 s…'); setTimeout(() => say('Hello! This is test six.', { voice: pickVoice(voices()), name: 'test 6' }), 2000); },
+  resume: () => { synth.resume(); log(`resume — speaking=${synth.speaking} paused=${synth.paused}`); },
+  cancel: () => { synth.cancel(); log('stopped'); },
+  clear: () => { logEl.textContent = ''; },
+};
+document.querySelectorAll('button[data-test]').forEach((b) => b.addEventListener('click', () => tests[b.dataset.test]()));
+
+if (synth) {
+  showInfo();
+  synth.addEventListener ? synth.addEventListener('voiceschanged', showInfo) : (synth.onvoiceschanged = showInfo);
+  setTimeout(showInfo, 1000);
+} else {
+  showInfo();
+}
+log('page ready');
+</script>
+</body>
+</html>
