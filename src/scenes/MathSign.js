@@ -137,10 +137,12 @@ export class MathSignScene extends Phaser.Scene {
   // --- Answer bubbles -----------------------------------------------------------------------
   showBubbles() {
     const n = this.q.choices.length;
-    const gap = n > 3 ? 270 : n === 3 ? 310 : 360;
+    // 5–6 bubbles (letter questions) are drawn smaller so they all fit in one row (still ≥ 140 px to tap).
+    const gap = n >= 5 ? 210 : n > 3 ? 270 : n === 3 ? 310 : 360;
+    const s = this.bubbleScale = n >= 5 ? 0.8 : 1;
     this.bubbles = this.q.choices.map((value, i) => {
       const x = 640 + (i - (n - 1) / 2) * gap;
-      const glow = this.add.image(x, BUBBLE_Y, 'glow').setAlpha(0).setScale(0.9);
+      const glow = this.add.image(x, BUBBLE_Y, 'glow').setAlpha(0).setScale(0.9 * s);
       const img = this.add.image(x, BUBBLE_Y, `bubble${i % 4}`).setScale(0);
       const txt = this.add.text(x, BUBBLE_Y - 6, glyph(value), {
         fontFamily: FONT, fontSize: value.length > 1 ? '84px' : '104px', fontStyle: 'bold', color: INK, stroke: '#ffffff', strokeThickness: 10,
@@ -148,7 +150,7 @@ export class MathSignScene extends Phaser.Scene {
       img.setInteractive(new Phaser.Geom.Circle(90, 88, 88), Phaser.Geom.Circle.Contains);
       const b = { value, img, txt, glow, x, out: false };
       img.on('pointerdown', () => this.choose(b));
-      this.tweens.add({ targets: [img, txt], scale: 1, duration: 380, delay: 90 * i, ease: 'Back.easeOut' });
+      this.tweens.add({ targets: [img, txt], scale: s, duration: 380, delay: 90 * i, ease: 'Back.easeOut' });
       if (!this.reduceMotion) {
         this.tweens.add({ targets: [img, txt], y: '-=10', duration: 1100 + i * 130, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: 400 + i * 120 });
       }
@@ -169,7 +171,7 @@ export class MathSignScene extends Phaser.Scene {
   fadeOut(b) {
     b.out = true;
     b.img.disableInteractive();
-    this.tweens.add({ targets: [b.img, b.txt], alpha: 0.28, scale: 0.78, duration: 350, ease: 'Quad.easeOut' });
+    this.tweens.add({ targets: [b.img, b.txt], alpha: 0.28, scale: 0.78 * (this.bubbleScale || 1), duration: 350, ease: 'Quad.easeOut' });
   }
 
   // --- Misses -------------------------------------------------------------------------------
@@ -244,7 +246,7 @@ export class MathSignScene extends Phaser.Scene {
   pulse(glow, alpha) {
     glow.setAlpha(alpha);
     if (!this.reduceMotion) {
-      this.tweens.add({ targets: glow, scale: { from: 0.92, to: 1.08 }, alpha: { from: alpha * 0.8, to: alpha }, duration: 750, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.tweens.add({ targets: glow, scale: { from: 0.92 * (this.bubbleScale || 1), to: 1.08 * (this.bubbleScale || 1) }, alpha: { from: alpha * 0.8, to: alpha }, duration: 750, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
   }
 
@@ -256,9 +258,9 @@ export class MathSignScene extends Phaser.Scene {
     const ms = this.time.now - this.startTime;
     sfx.correct();
     this.sparkles.explode(this.reduceMotion ? 6 : 18, b.x, BUBBLE_Y);
-    this.tweens.add({ targets: [b.img, b.txt], scale: 1.35, alpha: 0, duration: 300, ease: 'Quad.easeOut' });
+    this.tweens.add({ targets: [b.img, b.txt], scale: 1.35 * (this.bubbleScale || 1), alpha: 0, duration: 300, ease: 'Quad.easeOut' });
     this.tweens.add({ targets: b.glow, alpha: 0, duration: 200 });
-    this.bubbles.forEach((o) => { if (o !== b) this.tweens.add({ targets: [o.img, o.txt], alpha: 0, scale: 0.5, duration: 250 }); });
+    this.bubbles.forEach((o) => { if (o !== b) this.tweens.add({ targets: [o.img, o.txt], alpha: 0, scale: 0.5 * (this.bubbleScale || 1), duration: 250 }); });
 
     this.setSlot(q.answer, GREEN);
     this.tweens.add({ targets: this.slotText, scale: { from: 1.3, to: 1 }, duration: 260, ease: 'Back.easeOut' });

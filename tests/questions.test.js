@@ -117,16 +117,32 @@ test('picker: a first-try miss comes back after another question', () => {
   assert.equal(p.next().key, q.key, 'back after one other question');
 });
 
-test('picker: bubbles start at 2 and grow with the child, capped by the level', () => {
+test('picker: letter questions get 5 bubbles, 6 once the letter is known, in every level', () => {
+  for (const l of LEVELS) {
+    const p = createQuestionPicker(l, { rng: mulberry32(3) });
+    for (let i = 0; i < 40; i++) {
+      const q = p.next();
+      if (['upper', 'lower', 'match'].includes(q.kind)) assert.equal(q.choices.length, 5, l.id);
+      assert.equal(new Set(q.choices).size, q.choices.length, 'no repeated bubbles');
+    }
+  }
   const m = createMastery();
-  const cfg = { items: { upper: 'B-B' }, maxChoices: 3 };
+  const p = createQuestionPicker({ items: { lower: 'a-c' }, maxChoices: 3 }, { rng: mulberry32(1), mastery: m });
+  assert.equal(p.next().choices.length, 5);
+  for (const k of ['L:a', 'L:b', 'L:c']) { m.record(k, { firstTry: true, ms: 1000 }); m.record(k, { firstTry: true, ms: 1000 }); }
+  assert.equal(p.next().choices.length, 6);
+});
+
+test('picker: number bubbles start at 2 and grow with the child, capped by the level', () => {
+  const m = createMastery();
+  const cfg = { items: { number: [2, 2] }, maxChoices: 3 };
   const p = createQuestionPicker(cfg, { rng: mulberry32(1), mastery: m });
   assert.equal(p.next().choices.length, 2);
-  m.record('U:B', { firstTry: true, ms: 1000 });
-  m.record('U:B', { firstTry: true, ms: 1000 });
+  m.record('N:2', { firstTry: true, ms: 1000 });
+  m.record('N:2', { firstTry: true, ms: 1000 });
   assert.equal(p.next().choices.length, 3);
-  m.record('U:B', { firstTry: true, ms: 1000 });
-  assert.equal(m.status('U:B'), 'mastered');
+  m.record('N:2', { firstTry: true, ms: 1000 });
+  assert.equal(m.status('N:2'), 'mastered');
   assert.equal(p.next().choices.length, 3, 'level 1 never shows more than 3');
   const p4 = createQuestionPicker({ ...cfg, maxChoices: 4 }, { rng: mulberry32(1), mastery: m });
   assert.equal(p4.next().choices.length, 4);

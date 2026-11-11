@@ -151,6 +151,14 @@ export function makeQuestion(item, spec = {}, { choices = 2, rng = Math.random, 
   return q;
 }
 
+// Letter questions (big, little, big ↔ little) always offer more bubbles than numbers:
+// 5 while a letter is new or was just missed, 6 once the child knows it. Not capped by maxChoices.
+const LETTER_KINDS = new Set(['upper', 'lower', 'match']);
+export const LETTER_CHOICES = { start: 5, known: 6 };
+function letterChoices(key, mastery) {
+  return mastery && mastery.choicesFor(key, 4) >= 3 ? LETTER_CHOICES.known : LETTER_CHOICES.start;
+}
+
 /**
  * Picks the questions for one play-through of a level.
  *  - never the same item twice in a row, and the kind of question changes whenever it can
@@ -158,7 +166,8 @@ export function makeQuestion(item, spec = {}, { choices = 2, rng = Math.random, 
  *  - items used less often in this level are preferred
  *  - an item missed on the first try comes back later (after at least one other question)
  *  - `mastery` (src/engine/mastery.js): missed items are picked more, known ones less, and the number
- *    of bubbles grows with how well the child knows the item (2 → 3 → 4, up to config.maxChoices)
+ *    of bubbles grows with how well the child knows the item (2 → 3 → 4, up to config.maxChoices);
+ *    letter questions always get 5 → 6 bubbles (see LETTER_CHOICES)
  */
 export function createQuestionPicker(config, { rng = Math.random, mastery = null } = {}) {
   const spec = config.items;
@@ -196,7 +205,9 @@ export function createQuestionPicker(config, { rng = Math.random, mastery = null
       if (!item) item = pick();
       last = item;
       seen.set(item.key, (seen.get(item.key) || 0) + 1);
-      const choices = mastery ? mastery.choicesFor(item.key, maxChoices) : Math.min(2, maxChoices);
+      const choices = LETTER_KINDS.has(item.kind)
+        ? letterChoices(item.key, mastery)
+        : mastery ? mastery.choicesFor(item.key, maxChoices) : Math.min(2, maxChoices);
       const allowLookalikes = !!mastery && mastery.status(item.key) === 'mastered';
       return makeQuestion(item, spec, { choices, rng, allowLookalikes });
     },

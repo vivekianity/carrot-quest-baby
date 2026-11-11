@@ -4,7 +4,7 @@
 // No network requests are made except to this site, and only for files not yet cached.
 
 // <files> (written by tools/update-sw.js — do not edit by hand)
-const VERSION = '2a2fdff2b3';
+const VERSION = 'c38600265d';
 const FILES = [
   './',
   'index.html',
